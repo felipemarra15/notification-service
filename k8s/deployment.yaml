@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-deployment
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification
+  template:
+    metadata:
+      labels:
+        app: notification
+    spec:
+      containers:
+      - name: notification
+        image: 044197873138.dkr.ecr.us-east-1.amazonaws.com/notification-service:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: ADMIN_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: notification-config
+              key: ADMIN_EMAIL
+        - name: SMTP_HOST
+          valueFrom: { secretKeyRef: { name: smtp-secret, key: SMTP_HOST } }
+        - name: SMTP_PORT
+          valueFrom: { secretKeyRef: { name: smtp-secret, key: SMTP_PORT } }
+        - name: SMTP_USER
+          valueFrom: { secretKeyRef: { name: smtp-secret, key: SMTP_USER } }
+        - name: SMTP_PASS
+          valueFrom: { secretKeyRef: { name: smtp-secret, key: SMTP_PASS } }
+        - name: SMTP_FROM
+          valueFrom: { secretKeyRef: { name: smtp-secret, key: SMTP_FROM } }
+        # liveness/readiness simples (opcionales)
+        readinessProbe:
+          httpGet: { path: /notify, port: 5000 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet: { path: /notify, port: 5000 }
+          initialDelaySeconds: 15
+          periodSeconds: 20

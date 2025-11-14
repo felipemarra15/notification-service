@@ -1,0 +1,14 @@
+# notification-service/k8s/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: prod
+spec:
+  selector:
+    app: notification-service
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

@@ -46,16 +46,22 @@ def _build_message(nombre: str, correo: str, telefono: Optional[str]) -> EmailMe
 
 def _send_email(msg: EmailMessage):
     if SEND_MODE_CONSOLE:
-        print("[NOTIFY][console] Enviaría email:\n", msg)
+        print("[NOTIFY][console] Enviaría email:\n", msg, flush=True)
         return
 
+    print(f"[NOTIFY] Intentando enviar email a {TO_ADMIN} desde {FROM_EMAIL}", flush=True)
+    print(f"[NOTIFY] SMTP: {SMTP_HOST}:{SMTP_PORT}, User: {SMTP_USER}", flush=True)
+    
     try:
         if SMTP_PORT == 465:
             # Timeout defensivo para que no quede bloqueado
+            print("[NOTIFY] Conectando con SMTP_SSL...", flush=True)
             context = ssl.create_default_context()
             with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context, timeout=15) as server:
+                print("[NOTIFY] Conectado. Haciendo login...", flush=True)
                 if SMTP_USER:
                     server.login(SMTP_USER, SMTP_PASS)
+                print("[NOTIFY] Login exitoso. Enviando mensaje...", flush=True)
                 server.send_message(msg)
         else:
             with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
@@ -68,14 +74,20 @@ def _send_email(msg: EmailMessage):
                 if SMTP_USER:
                     server.login(SMTP_USER, SMTP_PASS)
                 server.send_message(msg)
-        print("[NOTIFY] Email enviado ✅")
+        print("[NOTIFY] Email enviado ✅", flush=True)
     except Exception as e:
         # Logueamos el error, pero no afectamos la respuesta del endpoint
-        print(f"[NOTIFY] SMTP error: {e}")
+        print(f"[NOTIFY] SMTP error: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
 
 def _send_email_async(msg: EmailMessage):
     t = Thread(target=_send_email, args=(msg,), daemon=True)
     t.start()
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 @app.post("/notify")
 def notify(payload: NotifyPayload):

@@ -17,21 +17,70 @@ spec:
     spec:
       containers:
       - name: notification-service
-        image: 147227386153.dkr.ecr.us-east-1.amazonaws.com/notification-service:latest
+        image: 757054385635.dkr.ecr.us-east-1.amazonaws.com/notification-service:latest
         ports:
         - containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 15
-          periodSeconds: 20
+        env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: notification-service-config
+              key: LOG_LEVEL
+        - name: SERVICE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: notification-service-config
+              key: SERVICE_NAME
+        - name: FROM_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: notification-service-config
+              key: FROM_EMAIL
+        - name: TO_ADMIN
+          valueFrom:
+            configMapKeyRef:
+              name: notification-service-config
+              key: TO_ADMIN
+        - name: SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: smtp-secret
+              key: SMTP_USER
+        - name: SMTP_PASS
+          valueFrom:
+            secretKeyRef:
+              name: smtp-secret
+              key: SMTP_PASS
+        - name: SMTP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: smtp-secret
+              key: SMTP_HOST
+        - name: SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: smtp-secret
+              key: SMTP_PORT
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        # Health checks temporalmente deshabilitados hasta reconstruir imagen con endpoint /health
+        # readinessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8080
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 10
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8080
+        #   initialDelaySeconds: 15
+        #   periodSeconds: 20
 ---
 apiVersion: v1
 kind: Service
